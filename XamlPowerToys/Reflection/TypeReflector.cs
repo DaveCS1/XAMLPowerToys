@@ -153,7 +153,7 @@
                 returnValue.Add(item);
             }
 
-            if (type.BaseType != null && !Object.ReferenceEquals(type.BaseType, type.Module.Import(typeof(Object))) && type.BaseType.Scope != null) {
+            if (type.BaseType != null && !Object.ReferenceEquals(type.BaseType, type.Module.ImportReference(typeof(Object))) && type.BaseType.Scope != null) {
                 String baseTypeAssemblyName = null;
 
                 var td = type.BaseType as TypeDefinition;
