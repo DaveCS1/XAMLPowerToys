@@ -10,6 +10,10 @@ download in the
 
 These are the changes to each version that has been released on the official Visual Studio extension gallery.
 
+## 2.1.0
+- [x] Added support for .NET Core 3 WPF projects.
+
+
 ## 2.0.2
 - [x] Corrected ObservableCollection sorting, kept hanging with class objects with many properties (over 20).
 
