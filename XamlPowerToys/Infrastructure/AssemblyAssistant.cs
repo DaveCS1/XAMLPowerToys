@@ -77,8 +77,16 @@
         internal static String GetProjectTypeGuids(Project vsProject) {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             var projectRoot = ProjectRootElement.Open(vsProject.FileName);
-            // ReSharper disable once PossibleNullReferenceException
-            var netStandardTest = projectRoot.AllChildren.OfType<ProjectPropertyElement>().FirstOrDefault(x => x.Name == "TargetFramework" && x.Value.StartsWith("netstandard"));
+
+            var propertyElements = projectRoot.AllChildren.OfType<ProjectPropertyElement>();
+            var netCoreTest = propertyElements.FirstOrDefault(x => x.Name == "TargetFramework" && x.Value.StartsWith("netcoreapp3"));
+            var wpfTest = propertyElements.FirstOrDefault(x => x.Name == "UseWPF" && x.Value.StartsWith("true"));
+
+            if (netCoreTest != null && wpfTest != null) {
+                return AssemblyAssistant.WpfProjectGuidString;
+            }
+
+            var netStandardTest = propertyElements.FirstOrDefault(x => x.Name == "TargetFramework" && x.Value.StartsWith("netstandard"));
             if (netStandardTest != null) {
                 //is NETStandard project.
                 var xamarinPackageReferenceTest = projectRoot.AllChildren.OfType<ProjectItemElement>().FirstOrDefault(x => x.ItemType == "PackageReference" && x.Include == "Xamarin.Forms");
