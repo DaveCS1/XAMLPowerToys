@@ -10,6 +10,9 @@ download in the
 
 These are the changes to each version that has been released on the official Visual Studio extension gallery.
 
+## 2.3.0
+- [x] Properly disposing of Cecil.Mono assembly objects, ignoring Miscellaneous Files project.
+
 ## 2.1.0
 - [x] Added support for .NET Core 3 WPF projects.
 

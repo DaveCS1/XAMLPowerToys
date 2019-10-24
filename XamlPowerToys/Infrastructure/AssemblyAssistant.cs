@@ -177,6 +177,9 @@
             if (assemblyName.StartsWith("commonservicelocator")) {
                 return true;
             }
+            if (assemblyName.StartsWith("miscellaneous")) {
+                return true;
+            }
 
             return false;
         }

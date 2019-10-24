@@ -1,6 +1,6 @@
-# XAML Power Toys for Visual Studio 2017 - 2019
+# XAML Power Toys for Visual Studio 2019
 
-## Visual Studio 2017 Support - On Hold
+## Visual Studio 2017 Support - Removed
 I discovered a problem with the way references are resolved with the package on Visual Studio 2017.  I'm working with Microsoft to resolve the issue.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ns2n4aew6xx5txfd?svg=true)](https://ci.appveyor.com/project/kdawg1406/xamlpowertoys2015)
@@ -10,7 +10,9 @@ or get the [CI build](http://vsixgallery.com/extension/d01c1624-8838-4097-bf77-f
 
 ---------------------------------------
 
-Visual Studio 2017 - 2019 extension that enables developers to rapidly generate data entry forms from view models or entity objects for Xamarin Forms, UWP, WPF, and Silverlight.
+Visual Studio 2019 extension that enables developers to rapidly generate data entry forms from view models or entity objects for Xamarin Forms, UWP, WPF, and Silverlight.
+
+**Supports .NET Full Framework, .NET Standard, and .NET Core 3 applications.**
 
 See the [changelog](CHANGELOG.md) for changes and roadmap.
 

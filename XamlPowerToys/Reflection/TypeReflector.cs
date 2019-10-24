@@ -1,4 +1,5 @@
 ﻿namespace XamlPowerToys.Reflection {
+
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -16,15 +17,22 @@
     using XamlPowerToys.UI.Infrastructure;
     using XamlPowerToys.UI.SelectClassFromAssemblies;
 
-    public class TypeReflector {
-
+    public class TypeReflector : IDisposable {
+        IList<IDisposable> _disposables;
+        Boolean _disposedValue = false;
         String _silverlightAssembliesPath = String.Empty;
 
         public TypeReflector() {
         }
 
+        public void Dispose() {
+            Dispose(true);
+        }
+
         public TypeReflectorResult SelectClassFromAllReferencedAssemblies(Project sourceProject, String xamlFileClassName, String sourceCommandName, ProjectType projectFrameworkType, String projectFrameworkVersion) {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
+            _disposables = new List<IDisposable>();
 
             if (sourceProject == null) {
                 throw new ArgumentNullException(nameof(sourceProject));
@@ -35,7 +43,7 @@
             if (!Enum.IsDefined(typeof(ProjectType), projectFrameworkType)) {
                 throw new InvalidEnumArgumentException(nameof(projectFrameworkType), (int)projectFrameworkType, typeof(ProjectType));
             }
-                       
+
             if (projectFrameworkType == ProjectType.Silverlight) {
                 SetSilverlightInstallPath();
             }
@@ -56,11 +64,13 @@
             if (projectFrameworkType == ProjectType.Silverlight) {
                 resolver.AddSearchDirectory(_silverlightAssembliesPath);
             }
-            var reader = new ReaderParameters {AssemblyResolver = resolver};
+            var reader = new ReaderParameters { AssemblyResolver = resolver };
 
             var classEntities = new ClassEntities();
             var sourceProjectPath = Path.GetDirectoryName(assemblyPath);
             var sourceAssemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyPath, reader);
+            _disposables.Add(sourceAssemblyDefinition);
+
             var assembliesToLoad = new Hashtable();
 
             //load up all referenced assemblies for above assemblyPath
@@ -87,9 +97,11 @@
                 if (projectFrameworkType == ProjectType.Silverlight) {
                     resolver.AddSearchDirectory(_silverlightAssembliesPath);
                 }
-                var asyReader = new ReaderParameters {AssemblyResolver = asyResolver};
+                var asyReader = new ReaderParameters { AssemblyResolver = asyResolver };
+                var nextAssemblyDefinition = AssemblyDefinition.ReadAssembly(asyPath.ToString(), asyReader);
+                _disposables.Add(nextAssemblyDefinition);
 
-                ReflectClasses(AssemblyDefinition.ReadAssembly(asyPath.ToString(), asyReader), projectFrameworkType, projectFrameworkVersion, classEntities, ActiveProject.No);
+                ReflectClasses(nextAssemblyDefinition, projectFrameworkType, projectFrameworkVersion, classEntities, ActiveProject.No);
             }
 
             var listOfConverters = new List<String>();
@@ -99,10 +111,26 @@
             var result = view.ShowDialog();
             if (result.HasValue && result.Value && view.SelectedClassEntity != null) {
                 LoadPropertyInformation(view.SelectedClassEntity.TypeDefinition, view.SelectedClassEntity, assembliesToLoad, projectFrameworkType);
+                this.Dispose();
                 return new TypeReflectorResult(view.SelectedClassEntity, listOfConverters);
             }
-
+            this.Dispose();
             return null;
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            if (!_disposedValue) {
+                if (disposing) {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                foreach (var item in _disposables) {
+                    item.Dispose();
+                }
+
+                _disposables.Clear();
+                _disposedValue = true;
+            }
         }
 
         Boolean CanWrite(PropertyDefinition property) {
@@ -152,18 +180,18 @@
             foreach (PropertyDefinition item in type.Properties) {
                 returnValue.Add(item);
             }
-
             if (type.BaseType != null && !Object.ReferenceEquals(type.BaseType, type.Module.ImportReference(typeof(Object))) && type.BaseType.Scope != null) {
                 String baseTypeAssemblyName = null;
 
                 var td = type.BaseType as TypeDefinition;
-                var md = td?.Scope as ModuleDefinition;
-                if (md != null) {
-                    // when base type is in the types assembly
-                    if (md.Name == type.Module.Name) {
-                        return returnValue;
+                using (var md = td?.Scope as ModuleDefinition) {
+                    if (md != null) {
+                        // when base type is in the types assembly
+                        if (md.Name == type.Module.Name) {
+                            return returnValue;
+                        }
+                        baseTypeAssemblyName = md.Name.ToLower(CultureInfo.InvariantCulture);
                     }
-                    baseTypeAssemblyName = md.Name.ToLower(CultureInfo.InvariantCulture);
                 }
 
                 if (baseTypeAssemblyName == null) {
@@ -185,9 +213,9 @@
                             if (projectFrameworkType == ProjectType.Silverlight) {
                                 resolver.AddSearchDirectory(_silverlightAssembliesPath);
                             }
-                            var reader = new ReaderParameters {AssemblyResolver = resolver};
-
+                            var reader = new ReaderParameters { AssemblyResolver = resolver };
                             asyTargetAssemblyDefinition = AssemblyDefinition.ReadAssembly(asyName.ToString(), reader);
+                            _disposables.Add(asyTargetAssemblyDefinition);
                             break;
                         }
                     }
@@ -244,7 +272,7 @@
                 if (td == null) {
                     var tr = property.PropertyType;
                     if (tr != null) {
-                        // Only Silverlight requires this try/catch.  
+                        // Only Silverlight requires this try/catch.
                         try {
                             td = tr.Resolve();
                         } catch {
@@ -277,7 +305,7 @@
                                         continue;
                                     }
                                 }
-                                
+
                                 if (genericTd != null) {
                                     if (genericTd.HasProperties && genericTd.IsPublic && genericTd.IsClass && !genericTd.IsAbstract && !genericTd.Namespace.Contains("System") && !genericTd.Namespace.Contains("Xamarin.")) {
                                         foreach (var prop in genericTd.Properties) {
@@ -376,9 +404,8 @@
             }
 
             if (String.IsNullOrWhiteSpace(_silverlightAssembliesPath)) {
-                throw new Exception("Unable to get Silverlight 5 install path from the registery.");
+                throw new Exception("Unable to get Silverlight 5 install path from the registry.");
             }
         }
-
     }
 }
